@@ -1,0 +1,54 @@
+# Controll Supervisor Add-on
+# Enables remote management of Home Assistant via Controll platform
+
+name: "Controll Supervisor"
+description: "Remote management for Controll platform - enables themes, config, and fleet management"
+version: "1.0.0"
+slug: "controll_supervisor"
+url: "https://controll.it"
+arch:
+  - aarch64
+  - amd64
+  - armv7
+startup: "services"
+boot: "auto"
+init: false
+
+# Permissions
+hassio_api: true
+hassio_role: "manager"
+homeassistant_api: true
+auth_api: true
+
+# Ingress - accessible via HA ingress proxy (no external port needed)
+ingress: true
+ingress_port: 8099
+ingress_stream: false
+panel_icon: "mdi:remote-desktop"
+panel_title: "Controll"
+panel_admin: true
+
+# Map config folder for file operations
+map:
+  - config:rw
+  - ssl:ro
+  - addons:rw
+  - backup:rw
+  - share:rw
+
+# Options
+options:
+  hub_token: ""
+  platform_url: "https://api.controll.it"
+  heartbeat_interval: 300
+  log_level: "info"
+
+schema:
+  hub_token: str
+  platform_url: url
+  heartbeat_interval: int(60,3600)
+  log_level: list(debug|info|warning|error)
+
+# Environment
+environment:
+  SUPERVISOR_TOKEN: "$(SUPERVISOR_TOKEN)"
