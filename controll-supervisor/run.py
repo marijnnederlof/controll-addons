@@ -13,6 +13,7 @@ from datetime import datetime
 from aiohttp import web, ClientSession
 
 # Controll Theme - light/fresh design matching controll.it
+# With custom CSS to rebrand sidebar
 CONTROLL_THEME = """controll:
   # Primary orange from controll.it
   primary-color: "#f97316"
@@ -64,6 +65,21 @@ CONTROLL_THEME = """controll:
   input-fill-color: "#f9fafb"
   input-ink-color: "#1f2937"
   input-label-ink-color: "#6b7280"
+
+  # Custom CSS to rebrand sidebar title
+  card-mod-theme: controll
+  card-mod-root-yaml: |
+    .: |
+      /* Hide original title and show Controll */
+      .menu .title {
+        font-size: 0 !important;
+      }
+      .menu .title::after {
+        content: "Controll";
+        font-size: 20px !important;
+        font-weight: 600;
+        color: #f97316;
+      }
 """
 
 # Configuration
@@ -591,8 +607,59 @@ async def send_heartbeat():
 
 # ============== AUTO SETUP ON STARTUP ==============
 
+BRANDING_JS = """/**
+ * Controll Branding Module
+ * Replaces "Home Assistant" with "Controll" in the sidebar
+ */
+(function() {
+  'use strict';
+  const BRAND = 'Controll';
+  let attempts = 0;
+
+  function apply() {
+    attempts++;
+    const sidebar = document.querySelector('ha-sidebar');
+    if (!sidebar || !sidebar.shadowRoot) {
+      if (attempts < 60) setTimeout(apply, 500);
+      return;
+    }
+
+    const title = sidebar.shadowRoot.querySelector('.title');
+    if (title && title.textContent.includes('Home Assistant')) {
+      title.textContent = BRAND;
+      title.style.fontWeight = '600';
+      title.style.letterSpacing = '-0.02em';
+      title.style.color = '#f97316';
+    }
+
+    if (document.title.includes('Home Assistant')) {
+      document.title = document.title.replace('Home Assistant', BRAND);
+    }
+
+    // Watch for changes
+    new MutationObserver(() => {
+      if (title && title.textContent.includes('Home Assistant')) {
+        title.textContent = BRAND;
+      }
+      if (document.title.includes('Home Assistant')) {
+        document.title = document.title.replace('Home Assistant', BRAND);
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply);
+  } else {
+    apply();
+  }
+  setTimeout(apply, 1000);
+  setTimeout(apply, 3000);
+})();
+"""
+
+
 def install_controll_branding():
-    """Install Controll theme and branding on startup."""
+    """Install Controll theme, branding JS, and configuration on startup."""
     logger.info("Installing Controll branding...")
 
     # Create themes directory
@@ -603,6 +670,15 @@ def install_controll_branding():
     theme_file = themes_dir / "controll.yaml"
     theme_file.write_text(CONTROLL_THEME)
     logger.info("Controll theme installed")
+
+    # Create www directory for custom JS
+    www_dir = Path(HA_CONFIG_PATH) / "www"
+    www_dir.mkdir(exist_ok=True)
+
+    # Write branding JS
+    branding_js_file = www_dir / "controll-branding.js"
+    branding_js_file.write_text(BRANDING_JS)
+    logger.info("Controll branding JS installed")
 
     # Update configuration.yaml
     config_file = Path(HA_CONFIG_PATH) / "configuration.yaml"
@@ -617,18 +693,31 @@ def install_controll_branding():
             changed = True
             logger.info("Added Controll name")
 
+    # Add frontend config with themes and extra_module_url
+    if "extra_module_url:" not in config_content or "controll-branding.js" not in config_content:
+        if "frontend:" not in config_content:
+            config_content += "\nfrontend:\n  themes: !include_dir_merge_named themes\n  extra_module_url:\n    - /local/controll-branding.js\n"
+            changed = True
+            logger.info("Added frontend configuration with branding JS")
+        elif "extra_module_url:" not in config_content:
+            # frontend exists but no extra_module_url
+            config_content = config_content.replace(
+                "frontend:",
+                "frontend:\n  extra_module_url:\n    - /local/controll-branding.js"
+            )
+            changed = True
+            logger.info("Added branding JS to frontend configuration")
+
     # Add themes config if not present
     if "themes:" not in config_content:
-        if "frontend:" not in config_content:
-            config_content += "\nfrontend:\n  themes: !include_dir_merge_named themes\n"
-        else:
+        if "frontend:" in config_content:
             # frontend exists, add themes under it
             config_content = config_content.replace(
                 "frontend:",
                 "frontend:\n  themes: !include_dir_merge_named themes"
             )
-        changed = True
-        logger.info("Added themes configuration")
+            changed = True
+            logger.info("Added themes configuration")
 
     if changed:
         config_file.write_text(config_content)
