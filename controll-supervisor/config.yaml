@@ -1,7 +1,7 @@
-# Controll Supervisor Add-on
-name: "Controll Supervisor"
-description: "Remote management for Controll platform"
-version: "1.0.3"
+# Controll.it Supervisor Add-on
+name: "Controll.it Supervisor"
+description: "Remote management for Controll.it platform"
+version: "1.0.4"
 slug: "controll_supervisor"
 url: "https://controll.it"
 arch:
