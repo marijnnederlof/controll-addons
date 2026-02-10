@@ -2,24 +2,50 @@
 """
 Controll Supervisor Add-on
 Remote management API for Controll fleet management platform.
-
-This add-on runs on each Home Assistant and enables:
-- Remote file operations (themes, dashboards, configs)
-- Service calls to Home Assistant
-- Add-on management
-- System discovery
-- Heartbeat to Controll platform
 """
 
 import asyncio
 import json
 import os
-import shutil
-import subprocess
 import logging
 from pathlib import Path
 from datetime import datetime
 from aiohttp import web, ClientSession
+
+# Controll Theme - installed automatically on startup
+CONTROLL_THEME = """controll:
+  primary-color: "#4f46e5"
+  accent-color: "#6366f1"
+  app-header-background-color: "#4f46e5"
+  app-header-text-color: "#ffffff"
+  sidebar-background-color: "#1e1e2e"
+  sidebar-text-color: "#cdd6f4"
+  sidebar-selected-background-color: "#4f46e5"
+  sidebar-selected-icon-color: "#ffffff"
+  sidebar-selected-text-color: "#ffffff"
+  sidebar-icon-color: "#a6adc8"
+  card-background-color: "#313244"
+  ha-card-background: "#313244"
+  ha-card-border-radius: "12px"
+  ha-card-box-shadow: "0 2px 8px rgba(0, 0, 0, 0.2)"
+  primary-text-color: "#cdd6f4"
+  secondary-text-color: "#a6adc8"
+  text-primary-color: "#cdd6f4"
+  background-color: "#1e1e2e"
+  primary-background-color: "#1e1e2e"
+  secondary-background-color: "#313244"
+  divider-color: "#45475a"
+  state-icon-color: "#cdd6f4"
+  state-on-color: "#4f46e5"
+  state-off-color: "#6c7086"
+  switch-checked-color: "#4f46e5"
+  switch-unchecked-button-color: "#6c7086"
+  switch-unchecked-track-color: "#45475a"
+  mdc-theme-primary: "#4f46e5"
+  input-fill-color: "#45475a"
+  input-ink-color: "#cdd6f4"
+  input-label-ink-color: "#a6adc8"
+"""
 
 # Configuration
 CONFIG_PATH = "/data/options.json"
@@ -544,11 +570,65 @@ async def send_heartbeat():
         await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 
+# ============== AUTO SETUP ON STARTUP ==============
+
+def install_controll_branding():
+    """Install Controll theme and branding on startup."""
+    logger.info("Installing Controll branding...")
+
+    # Create themes directory
+    themes_dir = Path(HA_CONFIG_PATH) / "themes"
+    themes_dir.mkdir(exist_ok=True)
+
+    # Write theme file
+    theme_file = themes_dir / "controll.yaml"
+    theme_file.write_text(CONTROLL_THEME)
+    logger.info("Controll theme installed")
+
+    # Update configuration.yaml
+    config_file = Path(HA_CONFIG_PATH) / "configuration.yaml"
+    config_content = config_file.read_text() if config_file.exists() else ""
+
+    changed = False
+
+    # Add homeassistant name if not present
+    if "name: Controll Hub" not in config_content and "name: \"Controll Hub\"" not in config_content:
+        if "homeassistant:" not in config_content:
+            config_content += "\n\nhomeassistant:\n  name: Controll Hub\n"
+            changed = True
+            logger.info("Added Controll Hub name")
+
+    # Add themes config if not present
+    if "themes:" not in config_content:
+        if "frontend:" not in config_content:
+            config_content += "\nfrontend:\n  themes: !include_dir_merge_named themes\n"
+        else:
+            # frontend exists, add themes under it
+            config_content = config_content.replace(
+                "frontend:",
+                "frontend:\n  themes: !include_dir_merge_named themes"
+            )
+        changed = True
+        logger.info("Added themes configuration")
+
+    if changed:
+        config_file.write_text(config_content)
+        logger.info("Configuration updated - restart HA to apply")
+
+    logger.info("Controll branding installation complete")
+
+
 # ============== MAIN ==============
 
 async def main():
     """Start the add-on."""
     logger.info("Starting Controll Supervisor Add-on")
+
+    # Auto-install Controll branding on startup
+    try:
+        install_controll_branding()
+    except Exception as e:
+        logger.error(f"Failed to install branding: {e}")
     logger.info(f"Platform URL: {PLATFORM_URL}")
     logger.info(f"Heartbeat interval: {HEARTBEAT_INTERVAL}s")
 

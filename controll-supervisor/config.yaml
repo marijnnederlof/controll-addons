@@ -1,7 +1,7 @@
 # Controll Supervisor Add-on
 name: "Controll Supervisor"
 description: "Remote management for Controll platform"
-version: "1.0.1"
+version: "1.0.3"
 slug: "controll_supervisor"
 url: "https://controll.it"
 arch:
@@ -17,11 +17,9 @@ hassio_api: true
 hassio_role: "manager"
 homeassistant_api: true
 
-# Network
-ports:
-  8099/tcp: 8099
-ports_description:
-  8099/tcp: "Controll API"
+# Ingress - accessible via HA proxy
+ingress: true
+ingress_port: 8099
 
 # Map config folder
 map:
