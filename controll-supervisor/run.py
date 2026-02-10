@@ -12,39 +12,58 @@ from pathlib import Path
 from datetime import datetime
 from aiohttp import web, ClientSession
 
-# Controll Theme - installed automatically on startup
+# Controll Theme - light/fresh design matching controll.it
 CONTROLL_THEME = """controll:
-  primary-color: "#4f46e5"
-  accent-color: "#6366f1"
-  app-header-background-color: "#4f46e5"
-  app-header-text-color: "#ffffff"
-  sidebar-background-color: "#1e1e2e"
-  sidebar-text-color: "#cdd6f4"
-  sidebar-selected-background-color: "#4f46e5"
+  # Primary orange from controll.it
+  primary-color: "#f97316"
+  accent-color: "#ea580c"
+
+  # Header - white with orange accent
+  app-header-background-color: "#ffffff"
+  app-header-text-color: "#1f2937"
+
+  # Sidebar - clean white/light gray
+  sidebar-background-color: "#f8fafc"
+  sidebar-text-color: "#374151"
+  sidebar-selected-background-color: "#f97316"
   sidebar-selected-icon-color: "#ffffff"
   sidebar-selected-text-color: "#ffffff"
-  sidebar-icon-color: "#a6adc8"
-  card-background-color: "#313244"
-  ha-card-background: "#313244"
-  ha-card-border-radius: "12px"
-  ha-card-box-shadow: "0 2px 8px rgba(0, 0, 0, 0.2)"
-  primary-text-color: "#cdd6f4"
-  secondary-text-color: "#a6adc8"
-  text-primary-color: "#cdd6f4"
-  background-color: "#1e1e2e"
-  primary-background-color: "#1e1e2e"
-  secondary-background-color: "#313244"
-  divider-color: "#45475a"
-  state-icon-color: "#cdd6f4"
-  state-on-color: "#4f46e5"
-  state-off-color: "#6c7086"
-  switch-checked-color: "#4f46e5"
-  switch-unchecked-button-color: "#6c7086"
-  switch-unchecked-track-color: "#45475a"
-  mdc-theme-primary: "#4f46e5"
-  input-fill-color: "#45475a"
-  input-ink-color: "#cdd6f4"
-  input-label-ink-color: "#a6adc8"
+  sidebar-icon-color: "#6b7280"
+
+  # Cards - white with subtle shadow
+  card-background-color: "#ffffff"
+  ha-card-background: "#ffffff"
+  ha-card-border-radius: "8px"
+  ha-card-box-shadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
+
+  # Text colors
+  primary-text-color: "#1f2937"
+  secondary-text-color: "#6b7280"
+  text-primary-color: "#1f2937"
+
+  # Background - light gray
+  background-color: "#f3f4f6"
+  primary-background-color: "#f3f4f6"
+  secondary-background-color: "#ffffff"
+
+  # UI elements
+  divider-color: "#e5e7eb"
+  state-icon-color: "#374151"
+  state-on-color: "#f97316"
+  state-off-color: "#9ca3af"
+
+  # Switches
+  switch-checked-color: "#f97316"
+  switch-unchecked-button-color: "#9ca3af"
+  switch-unchecked-track-color: "#d1d5db"
+
+  # Material design
+  mdc-theme-primary: "#f97316"
+
+  # Inputs
+  input-fill-color: "#f9fafb"
+  input-ink-color: "#1f2937"
+  input-label-ink-color: "#6b7280"
 """
 
 # Configuration
@@ -473,7 +492,7 @@ async def handle_set_branding(request):
 
     try:
         data = await request.json()
-        name = data.get("name", "Controll Hub")
+        name = data.get("name", "Controll")
 
         config_file = Path(HA_CONFIG_PATH) / "configuration.yaml"
         config_content = config_file.read_text() if config_file.exists() else ""
@@ -592,11 +611,11 @@ def install_controll_branding():
     changed = False
 
     # Add homeassistant name if not present
-    if "name: Controll Hub" not in config_content and "name: \"Controll Hub\"" not in config_content:
+    if "name: Controll" not in config_content and "name: \"Controll\"" not in config_content:
         if "homeassistant:" not in config_content:
-            config_content += "\n\nhomeassistant:\n  name: Controll Hub\n"
+            config_content += "\n\nhomeassistant:\n  name: Controll\n"
             changed = True
-            logger.info("Added Controll Hub name")
+            logger.info("Added Controll name")
 
     # Add themes config if not present
     if "themes:" not in config_content:
